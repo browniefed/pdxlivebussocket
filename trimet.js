@@ -61,7 +61,7 @@ Trimet.prototype._updateVehicles = function() {
 
 	request({
 		url: vehicleUrl,
-		json, true
+		json: true
 	}, function(err, response, body) {
 		if (err) {
 			//Classic node
@@ -69,7 +69,7 @@ Trimet.prototype._updateVehicles = function() {
 		}
 		_.extend(this._vehicles, _.indexBy(_.map(body.resultSet.vehicle), function(vehicle) {
 			return _.pick(vehicle, 'direction', 'type', 'signMessageLong', 'longitude', 'vehicleID', 'routeNumber', 'bearing', 'latitude', 'delay');
-		});
+		}, 'vehicleID'));
 
 	});
 
