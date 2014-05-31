@@ -10,8 +10,8 @@
   "license": "MIT",
   "dependencies": {
     "restify": "^2.8.1",
-    "socket.io": "^0.9.17",
     "request": "^2.36.0",
-    "lodash": "^2.4.1"
+    "lodash": "^2.4.1",
+    "socket.io": "^1.0.2"
   }
 }

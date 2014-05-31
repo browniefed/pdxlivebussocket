@@ -46,7 +46,7 @@ Trimet.prototype._getBaseUrl = function(api) {
 }
 
 Trimet.prototype._getVehicleUrl = function(queryParams) {
-	return this._getUrlWithParams('vehicle', queryParams)
+	return this._getUrlWithParams('vehicles', queryParams)
 }
 
 Trimet.prototype._getRoutesUrl= function(queryParams) {
@@ -67,11 +67,14 @@ Trimet.prototype._updateVehicles = function() {
 			//Classic node
 			return;
 		}
-		_.extend(this._vehicles, _.indexBy(_.map(body.resultSet.vehicle), function(vehicle) {
-			return _.pick(vehicle, 'direction', 'type', 'signMessageLong', 'longitude', 'vehicleID', 'routeNumber', 'bearing', 'latitude', 'delay');
-		}, 'vehicleID'));
 
-	});
+		_.extend(this._vehicles, _.indexBy(_.map(body.resultSet.vehicle, function(vehicle) {
+			return _.pick(vehicle, 'direction', 'type', 'signMessageLong', 'longitude', 'vehicleID', 'routeNumber', 'bearing', 'latitude', 'delay');
+		}), 'vehicleID'));
+
+		this.cb && this.cb(this._vehicles);
+
+	}.bind(this));
 
 }
 
