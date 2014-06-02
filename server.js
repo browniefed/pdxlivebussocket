@@ -1,12 +1,13 @@
 var restify = require('restify'),
 	socketio = require('socket.io'),
+	config = require('./config'),
 	_ = require('lodash'),
 	Trimet = require('./trimet'),
 	server = restify.createServer(),
 	io = socketio(server),
 	trimet = new Trimet({
 		interval: 5000,
-		apikey: process.env.TRIMET_API_KEY
+		apikey: process.env.TRIMET_API_KEY || config.TRIMET_API_KEY
 	})
 
 
