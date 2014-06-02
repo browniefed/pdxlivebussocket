@@ -17,6 +17,24 @@ server.get('/', function(req, res, next) {
 	res.send('This is the api end point for PDXLiveBus App');
 });
 
+server.get('/findStops/:ll', function(req, res, next) {
+	var search = {
+		ll: req.params.ll,
+		feet: 1000,
+		showRoutes: true,
+		showRouteDirs: true
+	};
+	trimet.searchForStops(search, function(err, data) {
+		if (!err) {
+			res.json(data);
+		}
+	})
+});
+
+server.get('/vehicles', function(req, res, next) {
+	res.json(trimet.getVehicles());
+});
+
 io.set( 'origins', '*:*' );
 
 io.on('connection', function(socket) {
@@ -35,8 +53,9 @@ io.on('connection', function(socket) {
 });
 
 
-trimet.listenForBuses(function(data) {
+trimet.listenForVehicles(function(data) {
 	//If route we should send down the vehicle as an array not per-vehicle
+	//Also be smart enough if they listen for a route + a vehicle in a route then don't send em both dummy
 	_.each(data, function(vehicle, key) {
 		io.to('v'+key).emit('vehicle', vehicle);
 		io.to('r'+vehicle.routeNumber).emit('vehicle', vehicle);

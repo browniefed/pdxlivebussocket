@@ -9,9 +9,11 @@ var Trimet = function(config) {
 	this._baseUrl = 'http://developer.trimet.org/';
 	this._api = {
 		vehicles: 'beta/v2/vehicles',
-		routes: '/ws/V1/routeConfig'
+		routes: 'ws/V1/routeConfig',
+		stops: 'ws/V1/stops'
 	}
 }
+
 
 Trimet.prototype.hasVehicle = function(vehicleId) {
 	return this._vehicles[vehicleId];
@@ -27,12 +29,20 @@ Trimet.prototype.vehiclesInRoute = function(routeId) {
 	});
 }
 
-Trimet.prototype.listenForBuses = function(cb) {
+Trimet.prototype.listenForVehicles = function(cb) {
 	this.cb = cb;
 	clearInterval(this.interval);
 	this.interval = setInterval(this._updateVehicles.bind(this), this.config.interval || 5000);
 }
 
+
+Trimet.prototype.searchForStops = function(search, cb) {
+	this._findNearbyStops(search, cb);
+}
+
+Trimet.prototype.getVehicles = function() {
+	return this._vehicles;
+}
 
 Trimet.prototype._getUrlWithParams = function(api, queryParams) {
 	var params = '';
@@ -49,8 +59,12 @@ Trimet.prototype._getVehicleUrl = function(queryParams) {
 	return this._getUrlWithParams('vehicles', queryParams)
 }
 
-Trimet.prototype._getRoutesUrl= function(queryParams) {
-	return this._getUrlWithParams(routes, queryParams);
+Trimet.prototype._getRoutesUrl = function(queryParams) {
+	return this._getUrlWithParams('routes', queryParams);
+}
+
+Trimet.prototype._getStopsUrl = function(queryParams) {
+	return this._getUrlWithParams('stops', queryParams);
 }
 
 Trimet.prototype._updateVehicles = function() {
@@ -63,12 +77,11 @@ Trimet.prototype._updateVehicles = function() {
 		url: vehicleUrl,
 		json: true
 	}, function(err, response, body) {
-		if (err) {
+		if (err || !body) {
 			//Classic node
 			return;
 		}
-
-		_.extend(this._vehicles, _.indexBy(_.map(body.resultSet.vehicle, function(vehicle) {
+		_.extend(this._vehicles, _.indexBy(_.map(body.resultSet.vehicle || [], function(vehicle) {
 			return _.pick(vehicle, 'direction', 'type', 'signMessageLong', 'longitude', 'vehicleID', 'routeNumber', 'bearing', 'latitude', 'delay');
 		}), 'vehicleID'));
 
@@ -96,6 +109,22 @@ Trimet.prototype._getRoutes = function() {
 		_.each(body.resultSet.vehicle, function(route) {
 			this.routes[route.route] = route;
 		}.bind(this));
+	})
+}
+
+Trimet.prototype._findNearbyStops = function(config, cb) {
+	config.json = true;
+	var stopUrl = this._getStopsUrl(config);
+
+	request({
+		url: stopUrl,
+		json: true,
+	}, function(err, response, body) {
+		if (err) {
+			cb(err, null);
+		}
+
+		cb(null, body.resultSet.location || []);
 	})
 }
 
