@@ -22,8 +22,7 @@ server.get('/findStops/:ll/:radius', function(req, res, next) {
 	var search = {
 		ll: req.params.ll,
 		feet: req.params.radius || 2000,
-		showRoutes: true,
-		showRouteDirs: true
+		showRoutes: true
 	};
 	trimet.searchForStops(search, function(err, data) {
 		if (!err) {
