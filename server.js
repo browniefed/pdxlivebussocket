@@ -7,13 +7,13 @@ var restify = require('restify'),
 	config = {};
 
 	if (!process.env.TRIMET_API_KEY) {
-		var config = require('./config'),
+		var config = require('./config');
 	}
 
-	trimet = new Trimet({
+	var trimet = new Trimet({
 		interval: 5000,
 		apikey: process.env.TRIMET_API_KEY || config.TRIMET_API_KEY
-	})
+	});
 
 
 
