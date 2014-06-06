@@ -18,10 +18,10 @@ server.get('/', function(req, res, next) {
 	res.send('This is the api end point for PDXLiveBus App');
 });
 
-server.get('/findStops/:ll/:radius', function(req, res, next) {
+server.get('/findStops/:ll', function(req, res, next) {
 	var search = {
 		ll: req.params.ll,
-		feet: req.params.radius || 2000,
+		feet: 2000,
 		showRoutes: true
 	};
 	trimet.searchForStops(search, function(err, data) {
