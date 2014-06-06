@@ -59,14 +59,14 @@ io.on('connection', function(socket) {
 });
 
 
-trimet.listenForVehicles(function(data) {
-	//If route we should send down the vehicle as an array not per-vehicle
-	//Also be smart enough if they listen for a route + a vehicle in a route then don't send em both dummy
-	_.each(data, function(vehicle, key) {
-		io.to('v'+key).emit('vehicle', vehicle);
-		io.to('r'+vehicle.routeNumber).emit('vehicle', vehicle);
-	});
-})
+// trimet.listenForVehicles(function(data) {
+// 	//If route we should send down the vehicle as an array not per-vehicle
+// 	//Also be smart enough if they listen for a route + a vehicle in a route then don't send em both dummy
+// 	_.each(data, function(vehicle, key) {
+// 		io.to('v'+key).emit('vehicle', vehicle);
+// 		io.to('r'+vehicle.routeNumber).emit('vehicle', vehicle);
+// 	});
+// })
 
 
 
