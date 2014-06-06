@@ -1,14 +1,20 @@
 var restify = require('restify'),
 	socketio = require('socket.io'),
-	config = require('./config'),
 	_ = require('lodash'),
 	Trimet = require('./trimet'),
 	server = restify.createServer(),
 	io = socketio(server),
+	config = {};
+
+	if (!process.env.TRIMET_API_KEY) {
+		var config = require('./config'),
+	}
+
 	trimet = new Trimet({
 		interval: 5000,
 		apikey: process.env.TRIMET_API_KEY || config.TRIMET_API_KEY
 	})
+
 
 
 server.use(restify.CORS());
