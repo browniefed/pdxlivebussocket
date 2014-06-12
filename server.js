@@ -83,7 +83,11 @@ trimet.listenForVehicles(function(data) {
 });
 
 trimet.listenForStops(function(data) {
-	//stops
+	_.each(data, function(stop) {
+		_.each(stop, function(arrival, route) {
+			io.to('s' + stop.locid + 'r' + route, arrival);
+		});
+	});
 });
 
 
