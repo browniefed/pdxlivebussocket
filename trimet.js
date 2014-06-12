@@ -5,12 +5,13 @@ var Trimet = function(config) {
 	this.config = config;
 	this._vehicles = {};
 	this._routes = {};
-
+	this._registeredStops = [];
 	this._baseUrl = 'http://developer.trimet.org/';
 	this._api = {
 		vehicles: 'beta/v2/vehicles',
 		routes: 'ws/V1/routeConfig',
-		stops: 'ws/V1/stops'
+		stops: 'ws/V1/stops',
+		arrivals: 'ws/v2/arrivals'
 	}
 }
 
@@ -35,6 +36,11 @@ Trimet.prototype.listenForVehicles = function(cb) {
 	this.interval = setInterval(this._updateVehicles.bind(this), this.config.interval || 5000);
 }
 
+Trimet.prototype.listenForStops = function(cb) {
+	this.stopCb = cb;
+	clearInterval(this.stopInterval);
+	this.stopInterval = setInterval(this._updateRegisteredStops.bind(this), this.config.interval || 5000);
+}
 
 Trimet.prototype.searchForStops = function(search, cb) {
 	this._findNearbyStops(search, cb);
@@ -42,6 +48,23 @@ Trimet.prototype.searchForStops = function(search, cb) {
 
 Trimet.prototype.getVehicles = function() {
 	return this._vehicles;
+}
+
+Trimet.prototype.getStopsRegistered = function() {
+	return this._registeredStops.join(',');
+}
+
+Trimet.prototype.registerStop = function(stopId) {
+	if (this._registeredStops.indexOf(stopId) === -1) {
+		this._registeredStops.push(stopId);
+	}
+}
+
+Trimet.prototype.unregisterStop = function(stopId) {
+	var stopIndex = this._registeredStops.indexOf(stopId);
+	if (stopIndex !== -1) {
+		this._registeredStops.splice(stopIndex, 1);
+	}
 }
 
 Trimet.prototype._getUrlWithParams = function(api, queryParams) {
@@ -66,7 +89,9 @@ Trimet.prototype._getRoutesUrl = function(queryParams) {
 Trimet.prototype._getStopsUrl = function(queryParams) {
 	return this._getUrlWithParams('stops', queryParams);
 }
-
+Trimet.prototype._getArrivalsUrl = function(queryParams) {
+	return this._getUrlWithParams('arrivals', queryParams);
+}
 Trimet.prototype._updateVehicles = function() {
 	var vehicleUrl = this._getVehicleUrl({
 		showNonRevenue: true,
@@ -88,6 +113,10 @@ Trimet.prototype._updateVehicles = function() {
 		this.cb && this.cb(this._vehicles);
 
 	}.bind(this));
+
+}
+
+Trimet.prototype._updateRegisteredStops = function() {
 
 }
 
@@ -121,13 +150,28 @@ Trimet.prototype._findNearbyStops = function(config, cb) {
 		json: true,
 	}, function(err, response, body) {
 		if (err) {
-			cb(err, null);
+			return cb(err, null);
 		}
 
 		cb(null, body.resultSet.location || []);
 	})
 }
 
+Trimet.prototype._getVehiclesToStops = function(config, cb) {
+	config.json = true;
+	config.locIDs = this.getStopsRegistered();
+
+	var arrivalsUrl = this._getArrivalsUrl(config);
+	request({
+		url: arrivalsUrl,
+		json: true
+	}, function(err, response, body) {
+		if (err) {
+			return cb(err, null);
+		}
+		cb(null, body.resultSet);
+	})
+}
 
 
 
