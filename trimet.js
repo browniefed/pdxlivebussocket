@@ -51,7 +51,11 @@ Trimet.prototype.getVehicles = function() {
 }
 
 Trimet.prototype.getCurrentVehicleStop = function(vehicleId) {
-	return this.getVehicles()[vehicleId].lastLocID;
+	return (this.getVehicles()[vehicleId] || {}).lastLocID;
+}
+
+Trimet.prototype.getVehicle = function(vehicleId) {
+	return this.getVehicles()[vehicleId];
 }
 
 Trimet.prototype.getStopsRegistered = function() {
@@ -93,9 +97,11 @@ Trimet.prototype._getRoutesUrl = function(queryParams) {
 Trimet.prototype._getStopsUrl = function(queryParams) {
 	return this._getUrlWithParams('stops', queryParams);
 }
+
 Trimet.prototype._getArrivalsUrl = function(queryParams) {
 	return this._getUrlWithParams('arrivals', queryParams);
 }
+
 Trimet.prototype._updateVehicles = function() {
 	var vehicleUrl = this._getVehicleUrl({
 		showNonRevenue: true,
@@ -111,7 +117,7 @@ Trimet.prototype._updateVehicles = function() {
 			return;
 		}
 		_.extend(this._vehicles, _.indexBy(_.map(body.resultSet.vehicle || [], function(vehicle) {
-			return _.pick(vehicle, 'direction', 'type', 'signMessageLong', 'longitude', 'vehicleID', 'routeNumber', 'bearing', 'latitude', 'delay');
+			return vehicle;
 		}), 'vehicleID'));
 
 		this.cb && this.cb(this._vehicles);
@@ -123,23 +129,28 @@ Trimet.prototype._updateVehicles = function() {
 Trimet.prototype._updateRegisteredStops = function() {
 	var stops = {
 		locIDs: this.getStopsRegistered(),
-		showPosition: true
+		showPosition: true,
+		arrivals: 1
 	};
 
-	this._getVehiclesToStops(stops, function(data) {
+	this._getVehiclesToStops(stops, function(err, data) {
 		var buildPositions = {},
 			currentArrival;
 
-		_.each(data.arrivals, function(arrival) {
+		_.each(data, function(arrival) {
+
 			buildPositions[arrival.locid] = buildPositions[arrival.locid] || {};
 
 			buildPositions[arrival.locid][arrival.route] = arrival;
 			currentArrival = buildPositions[arrival.locid][arrival.route];
-
-			currentArrival.currentStop = this.getCurrentVehicleStop(arrival.vehicleID);
-			currentArrival.lat = currentArrival.buildPositions.lat;
-			currentArrival.lng = currentArrival.buildPositions.lng;
-			delete currentArrival.buildPositions;
+			var currentVehicle = this.getVehicle(arrival.vehicleID);
+			if (currentVehicle) {
+				currentArrival.currentStop = currentVehicle.lastLocID;
+				currentArrival.lat = currentVehicle.latitude;
+				currentArrival.lng = currentVehicle.longitude;
+				currentArrival.vehicleInfo = currentVehicle;
+				delete currentArrival.buildPositions;
+			}
 		}, this);
 
 		this.stopCb(buildPositions);
@@ -188,6 +199,7 @@ Trimet.prototype._getVehiclesToStops = function(config, cb) {
 	config.json = true;
 
 	var arrivalsUrl = this._getArrivalsUrl(config);
+
 	request({
 		url: arrivalsUrl,
 		json: true
@@ -195,7 +207,7 @@ Trimet.prototype._getVehiclesToStops = function(config, cb) {
 		if (err) {
 			return cb(err, null);
 		}
-		cb(null, body.resultSet);
+		cb(null, body.resultSet.arrival);
 	})
 }
 

@@ -24,7 +24,7 @@ server.get('/', function(req, res, next) {
 	res.send('This is the api end point for PDXLiveBus App');
 });
 
-server.get('/findStops/:ll/:radius', function(req, res, next) {
+server.get('/findStops/:ll', function(req, res, next) {
 	var search = {
 		ll: req.params.ll,
 		feet: req.params.radius || 2000,
@@ -83,9 +83,9 @@ trimet.listenForVehicles(function(data) {
 });
 
 trimet.listenForStops(function(data) {
-	_.each(data, function(stop) {
+	_.each(data, function(stop, stopId) {
 		_.each(stop, function(arrival, route) {
-			io.to('s' + stop.locid + 'r' + route, arrival);
+			io.to('s' + stopId + 'r' + route).emit('vehicleChange', arrival);
 		});
 	});
 });
@@ -93,8 +93,9 @@ trimet.listenForStops(function(data) {
 
 function parseStop(room) {
 	var pieces = room.split('r'),
-		stopId = room[0].slice(1),
-		routeNumber = room[1];
+		stopId = pieces[0].slice(1),
+		routeNumber = pieces[1];
+
 	return {
 		stopId: stopId,
 		routeNumber: routeNumber
